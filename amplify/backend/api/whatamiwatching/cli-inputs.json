@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "serviceConfiguration": {
+    "apiName": "whatamiwatching",
+    "serviceName": "AppSync",
+    "gqlSchemaPath": "/Users/ingridcrant/code/whatamiwatching/amplify/backend/api/whatamiwatching/schema.graphql",
+    "defaultAuthType": {
+      "mode": "AMAZON_COGNITO_USER_POOLS",
+      "cognitoUserPoolId": "authwhatamiwatching87bb4e22"
+    }
+  }
+}

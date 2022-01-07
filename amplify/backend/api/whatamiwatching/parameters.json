@@ -1,0 +1,11 @@
+{
+  "AppSyncApiName": "whatamiwatching",
+  "DynamoDBBillingMode": "PAY_PER_REQUEST",
+  "DynamoDBEnableServerSideEncryption": false,
+  "AuthCognitoUserPoolId": {
+    "Fn::GetAtt": [
+      "authwhatamiwatching87bb4e22",
+      "Outputs.UserPoolId"
+    ]
+  }
+}
