@@ -6,7 +6,9 @@ import awsconfig from './aws-exports';
 import axios from 'axios';
 import { createMovie, updateMovie } from './graphql/mutations'
 import { listMovies } from './graphql/queries'
-import { apiKey } from './configure'
+import { apiKey } from './configure.js'
+import logo from './WhatAmIWatching.png'
+import Grid from "@mui/material/Grid"
 
 Amplify.configure(awsconfig)
 
@@ -60,7 +62,7 @@ const App = () => {
   }
 
   async function handleMovieStateChange(e, movie) {
-    e.preventDefault()
+    e.preventDefault();
     try {
       const movieDetails = {
         id: movie.id,
@@ -70,9 +72,9 @@ const App = () => {
         watch_status: "watched",
         vote_average: movie.vote_average,
         movie_id: movie.movie_id
-      }
-      await API.graphql(graphqlOperation(updateMovie, {input: movieDetails}))
-      fetchMovies()
+      };
+      await API.graphql(graphqlOperation(updateMovie, {input: movieDetails}));
+      fetchMovies();
     } catch (err) {
       console.log('error updating movie:', err)
     }
@@ -92,22 +94,31 @@ const App = () => {
     }
   }
 
+  async function recommendationToToWatch(e, movie) {
+    e.preventDefault();
+    console.log(JSON.stringify(movie));
+    try {
+      const {title, overview, poster_path, vote_average, id } = movie;
+      const currMovie = {title, overview, poster_path, vote_average, movie_id: id, watch_status: "to watch" };
+      setMovies([...movies, currMovie]);
+      await API.graphql(graphqlOperation(createMovie, {input: currMovie}));
+      fetchMovies();
+    } catch (err) {
+      console.log('error creating movie from recommendation:', err)
+    }
+  }
+
   async function addMovie() {
     try {
       const currMovieData = movieData[selectedMovie]
-      const currTitle = currMovieData.title
-      const currOverview = currMovieData.overview
-      const currPosterPath = currMovieData.poster_path
-      const currWatchStatus = watchState
-      const currVoteAverage = currMovieData.vote_average
-      const currMovieId = currMovieData.id
-      const movie = { title: currTitle, overview: currOverview, poster_path: currPosterPath, watch_status: currWatchStatus, vote_average: currVoteAverage, movie_id: currMovieId }
-      setMovies([...movies, movie])
-      setFormState(initialState)
-      setMovieQueried(false)
-      await API.graphql(graphqlOperation(createMovie, {input: movie}))
+      const {title, overview, poster_path, vote_average, id } = currMovieData;
+      const movie = { title, overview, poster_path, watch_status: watchState, vote_average, movie_id: id };
+      setMovies([...movies, movie]);
+      setFormState(initialState);
+      setMovieQueried(false);
+      await API.graphql(graphqlOperation(createMovie, {input: movie}));
     } catch (err) {
-      console.log('error creating movie:', err)
+      console.log('error creating movie:', err);
     }
   }
 
@@ -121,89 +132,93 @@ const App = () => {
   };
 
   return (
-    <div style={styles.container}>
-      <h2>WhatAmIWatching</h2>
-      <input
-        onChange={event => setInput('moviequery', event.target.value)}
-        style={styles.input}
-        value={formState.moviequery} 
-        placeholder="Movie Query"
-      />
-      <button style={styles.button} onClick={handleSubmit}>Query Movie</button>
-      { movieQueried ?
-      <form onSubmit={(e) => {handleMovieSubmit(e)}}>
-        <label>
-          Which movie?:
-          <select value={selectedMovie} onChange={(e) => {setSelectedMovie(e.target.value)}}>
-            {
-            movieData.map((movie, index) => (
-              <option key={index} value={index}>{movie.title}</option>
-            ))
-            }
-          </select>
-        </label>
-        <label>
-          Have you watched this movie already?:
-          <select value={watchState} onChange={(e) => {setWatchState(e.target.value)}}>
-            <option value="to watch">No</option>
-            <option value="watched">Yes</option>
-          </select>
-        </label>
-        <input type="submit" value="Submit" />
-      </form>
-      : null}
-      <div>
-        <h1>Reccomendations:</h1>
-        {recommendedMovies.map(movie => (
-          <div>
-            <img 
-            src={`https://image.tmdb.org/t/p/w300${movie.poster_path}`}
-            alt="movie poster"
-            />
-            <h2>{movie.title}</h2>
-          </div>
-        ))}
-      </div>
-      <div>
-        <h1>To Watch:</h1>
-        {movies.filter(movie => movie.watch_status === "to watch").map(filteredMovie => (
-          <div>
-            <img 
-            src={`https://image.tmdb.org/t/p/w300${filteredMovie.poster_path}`}
-            alt="movie poster"
-            />
-            <h2>{filteredMovie.title}</h2>
-            <button value={filteredMovie} onClick={(e) => {handleMovieStateChange(e, filteredMovie)}}>Add to Watched</button>
-            <button value={filteredMovie} onClick={(e) => {generateRecommendations(e, filteredMovie)}}>Generate Recommendations from this movie</button>
-          </div>
-        ))}
-      </div>
-      <div>
-        <h1>Watched:</h1>
-        {movies.filter(movie => movie.watch_status === "watched").map(filteredMovie => (
-          <div>
-            <img 
-            src={`https://image.tmdb.org/t/p/w300${filteredMovie.poster_path}`}
-            alt="movie poster"
-            />
-            <h2>{filteredMovie.title}</h2>
-            <button value={filteredMovie} onClick={(e) => {generateRecommendations(e, filteredMovie)}}>Generate Recommendations from this movie</button>
-          </div>
-        ))}
-      </div>
-      <button onClick={signOut}>
+    <div style={styles.overview}>
+      <div style={styles.container}>
+        <img src={logo}/>
+        <input
+          onChange={event => setInput('moviequery', event.target.value)}
+          style={styles.input}
+          value={formState.moviequery} 
+          placeholder="Movie Query"
+        />
+        <button style={styles.button} onClick={handleSubmit}>Query Movie</button>
+        { movieQueried ?
+        <form onSubmit={(e) => {handleMovieSubmit(e)}}>
+          <label>
+            Which movie?:
+            <select value={selectedMovie} onChange={(e) => {setSelectedMovie(e.target.value)}}>
+              {
+              movieData.map((movie, index) => (
+                <option key={index} value={index}>{movie.title}</option>
+              ))
+              }
+            </select>
+          </label>
+          <label>
+            Have you watched this movie already?:
+            <select value={watchState} onChange={(e) => {setWatchState(e.target.value)}}>
+              <option value="to watch">No</option>
+              <option value="watched">Yes</option>
+            </select>
+          </label>
+          <input type="submit" value="Submit" />
+        </form>
+        : null}
+        <button onClick={signOut}>
           Sign Out
-      </button>
+        </button>
+      </div>
+      <Grid container direction="row" spacing={2} justifyContent="center">
+        <Grid item xs>
+          <h1>To Watch:</h1>
+          {movies.filter(movie => movie.watch_status === "to watch").map(filteredMovie => (
+            <div>
+              <img 
+              src={`https://image.tmdb.org/t/p/w300${filteredMovie.poster_path}`}
+              alt="movie poster"
+              />
+              <h2>{filteredMovie.title}</h2>
+              <button value={filteredMovie} onClick={(e) => {handleMovieStateChange(e, filteredMovie, "watched")}}>Add to Watched</button>
+              <button value={filteredMovie} onClick={(e) => {generateRecommendations(e, filteredMovie)}}>Generate Recommendations from this movie</button>
+            </div>
+          ))}
+        </Grid>
+        {recommendedMovies.length > 0 ? <Grid item xs>
+          <h1>Recommendations:</h1>
+          {recommendedMovies.map(movie => (
+            <div>
+              <img 
+              src={`https://image.tmdb.org/t/p/w300${movie.poster_path}`}
+              alt="movie poster"
+              />
+              <h2>{movie.title}</h2>
+              <button value={movie} onClick={(e) => {recommendationToToWatch(e, movie)}}>Add to To-Watch</button>
+            </div>
+          ))}
+        </Grid>: null}
+        <Grid item xs>
+          <h1>Watched:</h1>
+          {movies.filter(movie => movie.watch_status === "watched").map(filteredMovie => (
+            <div>
+              <img 
+              src={`https://image.tmdb.org/t/p/w300${filteredMovie.poster_path}`}
+              alt="movie poster"
+              />
+              <h2>{filteredMovie.title}</h2>
+              <button value={filteredMovie} onClick={(e) => {generateRecommendations(e, filteredMovie)}}>Generate Recommendations from this movie</button>
+            </div>
+          ))}
+        </Grid>
+      </Grid>
     </div>
   )
 }
 
 const styles = {
+  overview: { display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '10px', justifyContent: 'center'},
   container: { width: 400, margin: '0 auto', display: 'flex', flex: 1, flexDirection: 'column', justifyContent: 'center', padding: 20 },
   todo: {  marginBottom: 15 },
   input: { border: 'none', backgroundColor: '#ddd', marginBottom: 10, padding: 8, fontSize: 18 },
-  todoName: { fontSize: 20, fontWeight: 'bold' },
-  todoDescription: { marginBottom: 0 },
   button: { backgroundColor: 'black', color: 'white', outline: 'none', fontSize: 18, padding: '12px 0px' },
   hr: { width: '100%', height: 1 }
 }
